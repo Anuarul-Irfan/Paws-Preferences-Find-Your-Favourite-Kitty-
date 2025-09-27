@@ -16,6 +16,7 @@ interface AppState {
   cats: Cat[]
   currentIndex: number
   likedCats: Cat[]
+  dislikedCats: Cat[]
   showSummary: boolean
   loading: boolean
 }
@@ -36,6 +37,7 @@ function App() {
     cats: [],
     currentIndex: 0,
     likedCats: [],
+    dislikedCats: [],
     showSummary: false,
     loading: true
   })
@@ -53,42 +55,263 @@ function App() {
   // Reference to the cat card for animations
   const cardRef = useRef<HTMLDivElement>(null)
 
-  // Function to fetch cats from Cataas API with variety
+  // State for image loading
+  const [imageLoading, setImageLoading] = useState<boolean>(true)
+  const [preloadedImages, setPreloadedImages] = useState<Set<string>>(new Set())
+  
+  // State for tracking used cat IDs to prevent duplicates
+  const [usedCatIds, setUsedCatIds] = useState<Set<string>>(new Set())
+  
+  // State for cat popup
+  const [selectedCat, setSelectedCat] = useState<Cat | null>(null)
+  const [showPopup, setShowPopup] = useState<boolean>(false)
+
+  // Load used cat IDs from localStorage on component mount
+  useEffect(() => {
+    const savedUsedIds = localStorage.getItem('usedCatIds')
+    if (savedUsedIds) {
+      try {
+        const parsedIds = JSON.parse(savedUsedIds)
+        setUsedCatIds(new Set(parsedIds))
+      } catch (error) {
+        console.warn('Failed to parse saved used cat IDs:', error)
+      }
+    }
+  }, [])
+
+  // Save used cat IDs to localStorage whenever it changes
+  useEffect(() => {
+    if (usedCatIds.size > 0) {
+      localStorage.setItem('usedCatIds', JSON.stringify([...usedCatIds]))
+    }
+  }, [usedCatIds])
+
+  // Function to check if a cat ID has been used
+  const isCatUsed = (catId: string): boolean => {
+    return usedCatIds.has(catId)
+  }
+
+  // Function to mark a cat as used
+  const markCatAsUsed = (catId: string): void => {
+    setUsedCatIds(prev => new Set([...prev, catId]))
+  }
+
+  // Function to show cat popup
+  const showCatPopup = (cat: Cat): void => {
+    setSelectedCat(cat)
+    setShowPopup(true)
+  }
+
+  // Function to close cat popup
+  const closeCatPopup = (): void => {
+    setShowPopup(false)
+    setSelectedCat(null)
+  }
+
+  // Function to preload images
+  const preloadImage = (url: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => {
+        setPreloadedImages(prev => new Set([...prev, url]))
+        resolve()
+      }
+      img.onerror = reject
+      img.src = url
+    })
+  }
+
+  // Function to preload next few images
+  const preloadNextImages = async (cats: Cat[], currentIndex: number) => {
+    const nextImages = cats.slice(currentIndex + 1, currentIndex + 4) // Preload next 3 images
+    const preloadPromises = nextImages.map(cat => preloadImage(cat.url))
+    
+    try {
+      await Promise.allSettled(preloadPromises)
+    } catch (error) {
+      console.warn('Some images failed to preload:', error)
+    }
+  }
+
+  // Function to fetch cats from Cataas API with real tags
   const fetchCats = async () => {
     try {
       setState(prev => ({ ...prev, loading: true }))
       
-      // Create a mix of different cat sources for testing
-      const catSources = [
-        // Direct image URLs (no JSON needed)
-        'https://cataas.com/cat',
-        'https://cataas.com/cat?type=square',
-        'https://cataas.com/cat?filter=mono',
-        'https://cataas.com/cat?width=400&height=400',
-        'https://cataas.com/cat?type=medium',
-        'https://cataas.com/cat?filter=blur',
-        'https://cataas.com/cat?type=small',
-        'https://cataas.com/cat?filter=negate',
-        'https://cataas.com/cat?filter=custom&brightness=1.2',
-        'https://cataas.com/cat?filter=custom&saturation=1.5'
+      // First, get available tags from the API
+      const tagsResponse = await fetch('https://cataas.com/api/tags')
+      const allTags = await tagsResponse.json()
+      
+      // Filter out invalid tags
+      const validTags = allTags.filter((tag: string) => {
+        return tag && 
+          typeof tag === 'string' && 
+          tag.trim().length > 1 && // At least 2 characters
+          !tag.match(/^[.#@]$/) && // Not just special characters
+          !tag.match(/^\d+$/) && // Not just numbers
+          tag.trim() !== '' && // Not empty
+          !tag.includes('(') && // No parentheses (often problematic)
+          !tag.includes(')') &&
+          !tag.includes('[') && // No brackets
+          !tag.includes(']') &&
+          !tag.includes('{') && // No braces
+          !tag.includes('}') &&
+          !tag.includes(' ') // No spaces (often problematic in URLs)
+      })
+      
+      console.log('Filtered valid tags:', validTags.slice(0, 20))
+      
+      // Get cats with different tags and filters
+      const cats: Cat[] = []
+      const tagsToUse = validTags.slice(0, 15) // Use first 15 valid tags
+      
+      // Fetch cats with specific tags
+      for (let i = 0; i < Math.min(tagsToUse.length, 5); i++) {
+        try {
+          const response = await fetch(`https://cataas.com/cat/${tagsToUse[i]}?json=true`)
+          
+          if (!response.ok) {
+            console.warn(`HTTP error for tag ${tagsToUse[i]}: ${response.status}`)
+            continue
+          }
+          
+          const catData = await response.json()
+          
+          if (catData && catData.id && !isCatUsed(catData.id)) {
+            // Check if cat has tags and they're not empty
+            const hasValidTags = catData.tags && 
+              Array.isArray(catData.tags) && 
+              catData.tags.length > 0 && 
+              catData.tags.some((tag: string) => tag && tag.trim().length > 0)
+            
+            if (hasValidTags) {
+              cats.push({
+                id: catData.id,
+                url: `https://cataas.com/cat/${catData.id}`,
+                width: 400,
+                height: 400,
+                tags: catData.tags,
+                createdAt: catData.createdAt || new Date().toISOString()
+              })
+              markCatAsUsed(catData.id)
+            }
+          }
+        } catch (tagError) {
+          console.warn(`Failed to fetch cat for tag ${tagsToUse[i]}:`, tagError)
+        }
+      }
+      
+      // Add some random cats with different filters for variety
+      const filterConfigs = [
+        { filter: 'mono', tags: ['monochrome'] },
+        { filter: 'negate', tags: ['negated'] },
+        { type: 'square', tags: ['square'] },
+        { type: 'medium', tags: ['medium'] },
+        { filter: 'custom', brightness: 1.2, tags: ['bright'] }
       ]
       
-      // Create cats with direct image URLs
-      const cats = catSources.map((url, i) => ({
-        id: `direct-cat-${i}`,
-        url: url,
+      for (let i = 0; i < filterConfigs.length && cats.length < 10; i++) {
+        const config = filterConfigs[i]
+        const params = new URLSearchParams()
+        
+        if (config.filter) params.append('filter', config.filter)
+        if (config.type) params.append('type', config.type)
+        if ('width' in config && config.width) params.append('width', config.width.toString())
+        if ('height' in config && config.height) params.append('height', config.height.toString())
+        if ('brightness' in config && config.brightness) params.append('brightness', config.brightness.toString())
+        if ('saturation' in config && config.saturation) params.append('saturation', config.saturation.toString())
+        if ('hue' in config && config.hue) params.append('hue', config.hue.toString())
+        if ('lightness' in config && config.lightness) params.append('lightness', config.lightness.toString())
+        params.append('json', 'true')
+        
+        try {
+          const response = await fetch(`https://cataas.com/cat?${params.toString()}`)
+          
+          if (!response.ok) {
+            console.warn(`HTTP error for filter ${JSON.stringify(config)}: ${response.status}`)
+            continue
+          }
+          
+          const catData = await response.json()
+          
+          if (catData && catData.id && !isCatUsed(catData.id)) {
+            // Check if cat has tags and they're not empty
+            const hasValidTags = catData.tags && 
+              Array.isArray(catData.tags) && 
+              catData.tags.length > 0 && 
+              catData.tags.some((tag: string) => tag && tag.trim().length > 0)
+            
+            if (hasValidTags) {
+              cats.push({
+                id: catData.id,
+                url: `https://cataas.com/cat/${catData.id}`,
+                width: 400,
+                height: 400,
+                tags: catData.tags,
+                createdAt: catData.createdAt || new Date().toISOString()
+              })
+              markCatAsUsed(catData.id)
+            }
+          }
+        } catch (filterError) {
+          console.warn(`Failed to fetch cat with filter ${JSON.stringify(config)}:`, filterError)
+        }
+      }
+      
+      // If we still don't have enough cats, add some random ones
+      let attempts = 0
+      const maxAttempts = 50 // Prevent infinite loop
+      
+      while (cats.length < 10 && attempts < maxAttempts) {
+        attempts++
+        const randomIndex = Math.floor(Math.random() * validTags.length)
+        const randomTag = validTags[randomIndex]
+        
+        try {
+          const response = await fetch(`https://cataas.com/cat/${randomTag}?json=true`)
+          
+          if (!response.ok) {
+            console.warn(`HTTP error for random tag ${randomTag}: ${response.status}`)
+            continue
+          }
+          
+          const catData = await response.json()
+          
+          if (catData && catData.id && !isCatUsed(catData.id)) {
+            // Check if cat has tags and they're not empty
+            const hasValidTags = catData.tags && 
+              Array.isArray(catData.tags) && 
+              catData.tags.length > 0 && 
+              catData.tags.some((tag: string) => tag && tag.trim().length > 0)
+            
+            if (hasValidTags) {
+              cats.push({
+                id: catData.id,
+                url: `https://cataas.com/cat/${catData.id}`,
         width: 400,
         height: 400,
-        tags: ['direct'],
-        createdAt: new Date().toISOString()
-      }))
+                tags: catData.tags,
+                createdAt: catData.createdAt || new Date().toISOString()
+              })
+              markCatAsUsed(catData.id)
+            }
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch random cat with tag ${randomTag}:`, error)
+        }
+      }
       
-      console.log('Created cats with direct URLs:', cats)
+      console.log('Fetched cats with real API data:', cats)
       setState(prev => ({ 
         ...prev, 
         cats, 
         loading: false 
       }))
+      
+      // Preload the first few images
+      if (cats.length > 0) {
+        preloadNextImages(cats, -1)
+      }
     } catch (error) {
       console.error('Error fetching cats:', error)
       setState(prev => ({ ...prev, loading: false }))
@@ -97,15 +320,27 @@ function App() {
 
   // Load cats when component mounts
   useEffect(() => {
-    // Test direct image loading first
-    console.log('Testing direct image loading...')
-    const testImg = new Image()
-    testImg.onload = () => console.log('Direct image test successful')
-    testImg.onerror = () => console.log('Direct image test failed')
-    testImg.src = 'https://cataas.com/cat'
-    
     fetchCats()
   }, [])
+
+  // Preload images when current index changes
+  useEffect(() => {
+    if (state.cats.length > 0) {
+      preloadNextImages(state.cats, state.currentIndex)
+    }
+  }, [state.currentIndex, state.cats])
+
+  // Handle image loading state
+  useEffect(() => {
+    if (state.cats.length > 0 && state.currentIndex < state.cats.length) {
+      const currentCat = state.cats[state.currentIndex]
+      if (preloadedImages.has(currentCat.url)) {
+        setImageLoading(false)
+      } else {
+        setImageLoading(true)
+      }
+    }
+  }, [state.currentIndex, state.cats, preloadedImages])
 
   // Function to handle like action
   const handleLike = () => {
@@ -135,6 +370,8 @@ function App() {
 
   // Function to handle dislike action
   const handleDislike = () => {
+    const currentCat = state.cats[state.currentIndex]
+    if (currentCat) {
     // Add animation for dislike action
     if (cardRef.current) {
       cardRef.current.style.transform = 'translateX(-100vw) rotate(-30deg)'
@@ -144,6 +381,7 @@ function App() {
     setTimeout(() => {
       setState(prev => ({
         ...prev,
+          dislikedCats: [...prev.dislikedCats, currentCat],
         currentIndex: prev.currentIndex + 1
       }))
       
@@ -153,6 +391,7 @@ function App() {
         cardRef.current.style.opacity = ''
       }
     }, 300)
+    }
   }
 
   // Check if we've gone through all cats
@@ -164,10 +403,15 @@ function App() {
 
   // Function to restart the app
   const restart = () => {
+    // Clear used cat IDs for a fresh start
+    setUsedCatIds(new Set())
+    localStorage.removeItem('usedCatIds')
+    
     setState({
       cats: [],
       currentIndex: 0,
       likedCats: [],
+      dislikedCats: [],
       showSummary: false,
       loading: true
     })
@@ -305,15 +549,26 @@ function App() {
 
   // Summary state
   if (state.showSummary) {
-    // Calculate statistics
+    // Calculate comprehensive statistics
     const totalCats = state.cats.length
     const likedCount = state.likedCats.length
+    const dislikedCount = state.dislikedCats.length
     const likePercentage = Math.round((likedCount / totalCats) * 100)
-    const gifCount = state.likedCats.filter(cat => cat.url.includes('.gif')).length
-    const allTags = state.likedCats.flatMap(cat => cat.tags)
-    const uniqueTags = [...new Set(allTags)]
-    const mostCommonTag = allTags.length > 0 
-      ? allTags.reduce((a, b, _, arr) => 
+    const dislikePercentage = Math.round((dislikedCount / totalCats) * 100)
+    const completionRate = Math.round(((likedCount + dislikedCount) / totalCats) * 100)
+    
+    // Tag analysis
+    const allLikedTags = state.likedCats.flatMap(cat => cat.tags)
+    const allDislikedTags = state.dislikedCats.flatMap(cat => cat.tags)
+    const uniqueLikedTags = [...new Set(allLikedTags)]
+    const uniqueDislikedTags = [...new Set(allDislikedTags)]
+    const mostLikedTag = allLikedTags.length > 0 
+      ? allLikedTags.reduce((a, b, _, arr) => 
+          arr.filter(v => v === a).length >= arr.filter(v => v === b).length ? a : b
+        )
+      : null
+    const mostDislikedTag = allDislikedTags.length > 0 
+      ? allDislikedTags.reduce((a, b, _, arr) => 
           arr.filter(v => v === a).length >= arr.filter(v => v === b).length ? a : b
         )
       : null
@@ -322,31 +577,65 @@ function App() {
       <div className="app">
         <div className="summary">
           <h1>🎉 Your Cat Preferences!</h1>
-          <p>You liked {likedCount} out of {totalCats} cats! ({likePercentage}%)</p>
+          <p>You've completed {completionRate}% of your cat journey!</p>
           
-          {/* Statistics */}
+          {/* Main Statistics */}
+          <div className="stats">
+            <div className="stat-item liked-stat">
+              <span className="stat-number">{likedCount}</span>
+              <span className="stat-label">Liked Cats</span>
+              <span className="stat-percentage">{likePercentage}%</span>
+            </div>
+            <div className="stat-item disliked-stat">
+              <span className="stat-number">{dislikedCount}</span>
+              <span className="stat-label">Disliked Cats</span>
+              <span className="stat-percentage">{dislikePercentage}%</span>
+            </div>
+            <div className="stat-item total-stat">
+              <span className="stat-number">{totalCats}</span>
+              <span className="stat-label">Total Cats</span>
+            </div>
+          </div>
+
+          {/* Detailed Statistics */}
           <div className="stats">
             <div className="stat-item">
-              <span className="stat-number">{gifCount}</span>
-              <span className="stat-label">GIFs Liked</span>
+              <span className="stat-number">{uniqueLikedTags.length}</span>
+              <span className="stat-label">Liked Tags</span>
             </div>
             <div className="stat-item">
-              <span className="stat-number">{uniqueTags.length}</span>
-              <span className="stat-label">Unique Tags</span>
+              <span className="stat-number">{uniqueDislikedTags.length}</span>
+              <span className="stat-label">Disliked Tags</span>
             </div>
-            {mostCommonTag && (
+          </div>
+
+          {/* Tag Preferences */}
+          {(mostLikedTag || mostDislikedTag) && (
+            <div className="stats">
+              {mostLikedTag && (
               <div className="stat-item">
-                <span className="stat-number">#{mostCommonTag}</span>
+                  <span className="stat-number">#{mostLikedTag}</span>
                 <span className="stat-label">Favorite Tag</span>
               </div>
             )}
+              {mostDislikedTag && (
+                <div className="stat-item">
+                  <span className="stat-number">#{mostDislikedTag}</span>
+                  <span className="stat-label">Least Favorite Tag</span>
+              </div>
+            )}
           </div>
+          )}
           
           <div className="liked-cats">
-            <h2>Your Favorites:</h2>
+            <h2>Your Favorites (Click to view details):</h2>
             <div className="cat-grid">
               {state.likedCats.map((cat) => (
-                <div key={cat.id} className="liked-cat-container">
+                <div 
+                  key={cat.id} 
+                  className="liked-cat-container"
+                  onClick={() => showCatPopup(cat)}
+                >
                   <img 
                     src={cat.url} 
                     alt="Liked cat" 
@@ -364,6 +653,33 @@ function App() {
             Find More Cats! 🐱
           </button>
         </div>
+        
+        {/* Cat Tags Popup */}
+        {showPopup && selectedCat && (
+          <div className="popup-overlay" onClick={closeCatPopup}>
+            <div className="popup-content" onClick={(e) => e.stopPropagation()}>
+              <button className="popup-close" onClick={closeCatPopup}>×</button>
+              <div className="popup-image-container">
+                <img 
+                  src={selectedCat.url} 
+                  alt="Cat" 
+                  className="popup-image"
+                />
+                {selectedCat.url.includes('.gif') && (
+                  <div className="popup-gif-indicator">🎬 GIF</div>
+                )}
+              </div>
+              <div className="popup-info">
+                <h3>Cat Tags</h3>
+                <div className="popup-tags">
+                  {selectedCat.tags.map((tag, index) => (
+                    <span key={index} className="popup-tag">#{tag}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -406,15 +722,26 @@ function App() {
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
         >
+          {imageLoading && (
+            <div className="image-loading">
+              <div className="spinner"></div>
+              <p>Loading adorable cat...</p>
+            </div>
+          )}
           <img 
             src={currentCat.url} 
             alt="Cat" 
             className="cat-image"
-            onLoad={() => console.log('Image loaded successfully:', currentCat.url)}
+            style={{ display: imageLoading ? 'none' : 'block' }}
+            onLoad={() => {
+              console.log('Image loaded successfully:', currentCat.url)
+              setImageLoading(false)
+            }}
             onError={(e) => {
               console.error('Image failed to load:', currentCat.url)
+              setImageLoading(false)
               // Set a fallback image
-              e.currentTarget.src = 'https://via.placeholder.com/400x400/ff6b6b/ffffff?text=Cat+Not+Found'
+              e.currentTarget.src = 'https://placehold.co/400x400/ff6b6b/ffffff?text=Cat+Not+Found'
             }}
           />
           
