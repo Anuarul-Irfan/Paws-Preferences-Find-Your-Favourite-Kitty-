@@ -7,6 +7,8 @@ interface Cat {
   url: string
   width: number
   height: number
+  tags: string[]
+  createdAt: string
 }
 
 // Define types for our app state
@@ -51,24 +53,37 @@ function App() {
   // Reference to the cat card for animations
   const cardRef = useRef<HTMLDivElement>(null)
 
-  // Function to fetch cats from Cataas API
+  // Function to fetch cats from Cataas API with variety
   const fetchCats = async () => {
     try {
       setState(prev => ({ ...prev, loading: true }))
       
-      // Fetch 10 cats from Cataas API
-      const promises = Array.from({ length: 10 }, (_, i) => 
-        fetch('https://cataas.com/cat?json=true')
-          .then(response => response.json())
-          .then(data => ({
-            id: `${data._id}-${i}`,
-            url: `https://cataas.com${data.url}`,
-            width: data.width || 400,
-            height: data.height || 400
-          }))
-      )
+      // Create a mix of different cat sources for testing
+      const catSources = [
+        // Direct image URLs (no JSON needed)
+        'https://cataas.com/cat',
+        'https://cataas.com/cat?type=square',
+        'https://cataas.com/cat?filter=mono',
+        'https://cataas.com/cat?width=400&height=400',
+        'https://cataas.com/cat?type=medium',
+        'https://cataas.com/cat?filter=blur',
+        'https://cataas.com/cat?type=small',
+        'https://cataas.com/cat?filter=negate',
+        'https://cataas.com/cat?filter=custom&brightness=1.2',
+        'https://cataas.com/cat?filter=custom&saturation=1.5'
+      ]
       
-      const cats = await Promise.all(promises)
+      // Create cats with direct image URLs
+      const cats = catSources.map((url, i) => ({
+        id: `direct-cat-${i}`,
+        url: url,
+        width: 400,
+        height: 400,
+        tags: ['direct'],
+        createdAt: new Date().toISOString()
+      }))
+      
+      console.log('Created cats with direct URLs:', cats)
       setState(prev => ({ 
         ...prev, 
         cats, 
@@ -82,6 +97,13 @@ function App() {
 
   // Load cats when component mounts
   useEffect(() => {
+    // Test direct image loading first
+    console.log('Testing direct image loading...')
+    const testImg = new Image()
+    testImg.onload = () => console.log('Direct image test successful')
+    testImg.onerror = () => console.log('Direct image test failed')
+    testImg.src = 'https://cataas.com/cat'
+    
     fetchCats()
   }, [])
 
@@ -274,6 +296,7 @@ function App() {
       <div className="app">
         <div className="loading">
           <h1>🐱 Finding adorable cats for you...</h1>
+          <p>Loading different cat styles and filters...</p>
           <div className="spinner"></div>
         </div>
       </div>
@@ -282,22 +305,57 @@ function App() {
 
   // Summary state
   if (state.showSummary) {
+    // Calculate statistics
+    const totalCats = state.cats.length
+    const likedCount = state.likedCats.length
+    const likePercentage = Math.round((likedCount / totalCats) * 100)
+    const gifCount = state.likedCats.filter(cat => cat.url.includes('.gif')).length
+    const allTags = state.likedCats.flatMap(cat => cat.tags)
+    const uniqueTags = [...new Set(allTags)]
+    const mostCommonTag = allTags.length > 0 
+      ? allTags.reduce((a, b, _, arr) => 
+          arr.filter(v => v === a).length >= arr.filter(v => v === b).length ? a : b
+        )
+      : null
+
     return (
       <div className="app">
         <div className="summary">
           <h1>🎉 Your Cat Preferences!</h1>
-          <p>You liked {state.likedCats.length} out of {state.cats.length} cats!</p>
+          <p>You liked {likedCount} out of {totalCats} cats! ({likePercentage}%)</p>
+          
+          {/* Statistics */}
+          <div className="stats">
+            <div className="stat-item">
+              <span className="stat-number">{gifCount}</span>
+              <span className="stat-label">GIFs Liked</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-number">{uniqueTags.length}</span>
+              <span className="stat-label">Unique Tags</span>
+            </div>
+            {mostCommonTag && (
+              <div className="stat-item">
+                <span className="stat-number">#{mostCommonTag}</span>
+                <span className="stat-label">Favorite Tag</span>
+              </div>
+            )}
+          </div>
           
           <div className="liked-cats">
             <h2>Your Favorites:</h2>
             <div className="cat-grid">
               {state.likedCats.map((cat) => (
-                <img 
-                  key={cat.id} 
-                  src={cat.url} 
-                  alt="Liked cat" 
-                  className="liked-cat-image"
-                />
+                <div key={cat.id} className="liked-cat-container">
+                  <img 
+                    src={cat.url} 
+                    alt="Liked cat" 
+                    className="liked-cat-image"
+                  />
+                  {cat.url.includes('.gif') && (
+                    <div className="liked-gif-indicator">🎬</div>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -352,7 +410,32 @@ function App() {
             src={currentCat.url} 
             alt="Cat" 
             className="cat-image"
+            onLoad={() => console.log('Image loaded successfully:', currentCat.url)}
+            onError={(e) => {
+              console.error('Image failed to load:', currentCat.url)
+              // Set a fallback image
+              e.currentTarget.src = 'https://via.placeholder.com/400x400/ff6b6b/ffffff?text=Cat+Not+Found'
+            }}
           />
+          
+          {/* Cat tags display */}
+          {currentCat.tags && currentCat.tags.length > 0 && (
+            <div className="cat-tags">
+              {currentCat.tags.slice(0, 3).map((tag, index) => (
+                <span key={index} className="cat-tag">
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+          
+          {/* GIF indicator */}
+          {currentCat.url.includes('.gif') && (
+            <div className="gif-indicator">
+              🎬 GIF
+            </div>
+          )}
+          
           <div className="cat-actions">
             <button 
               onClick={handleDislike} 
