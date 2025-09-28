@@ -8,9 +8,6 @@ interface SwipeHandlers {
 export const useSwipe = ({ onSwipeLeft, onSwipeRight }: SwipeHandlers) => {
   const touchStartX = useRef<number | null>(null)
   const touchStartY = useRef<number | null>(null)
-  const mouseStartX = useRef<number | null>(null)
-  const mouseStartY = useRef<number | null>(null)
-  const isDragging = useRef(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [isSwipeActive, setIsSwipeActive] = useState(false)
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null)

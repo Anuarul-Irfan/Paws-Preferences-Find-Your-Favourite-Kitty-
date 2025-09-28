@@ -53,7 +53,7 @@ export const useLocalStorage = <T>(key: string, initialValue: T) => {
     } catch (error) {
       console.warn(`Error setting localStorage key "${key}":`, error)
     }
-  }, [isClient, key])
+  }, [isClient, key, serialize])
 
   return [storedValue, setValue] as const
 }

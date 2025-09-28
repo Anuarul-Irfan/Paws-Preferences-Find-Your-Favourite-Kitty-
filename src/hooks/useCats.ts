@@ -83,7 +83,7 @@ export const useCats = () => {
         error: error instanceof Error ? error.message : 'Failed to load cats'
       }))
     }
-  }, [preloadNextImages])
+  }, [preloadNextImages, usedCatIds, markCatAsUsed])
 
   const handleLike = useCallback(() => {
     const currentCat = state.cats[state.currentIndex]
