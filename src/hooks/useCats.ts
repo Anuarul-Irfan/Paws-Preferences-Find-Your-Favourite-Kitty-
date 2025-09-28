@@ -121,9 +121,23 @@ export const useCats = () => {
           completionType: null,
           imageLoading: true // Start loading the next card
         }))
+        
+        // Check if the next image is already loaded (from preloading)
+        const nextCat = state.cats[newIndex]
+        if (nextCat && state.preloadedImages.has(nextCat.url)) {
+          // Image is already preloaded, so we can immediately set loading to false
+          setTimeout(() => {
+            setState(prev => ({ ...prev, imageLoading: false }))
+          }, 100) // Small delay to ensure smooth transition
+        } else {
+          // Fallback: if image doesn't load within 5 seconds, stop loading
+          setTimeout(() => {
+            setState(prev => ({ ...prev, imageLoading: false }))
+          }, 5000)
+        }
       }, 1500)
     }, 500) // Match animation duration
-  }, [state.cats, state.currentIndex])
+  }, [state.cats, state.currentIndex, state.preloadedImages])
 
   const handleDislike = useCallback(() => {
     const currentCat = state.cats[state.currentIndex]
@@ -161,9 +175,23 @@ export const useCats = () => {
           completionType: null,
           imageLoading: true // Start loading the next card
         }))
+        
+        // Check if the next image is already loaded (from preloading)
+        const nextCat = state.cats[newIndex]
+        if (nextCat && state.preloadedImages.has(nextCat.url)) {
+          // Image is already preloaded, so we can immediately set loading to false
+          setTimeout(() => {
+            setState(prev => ({ ...prev, imageLoading: false }))
+          }, 100) // Small delay to ensure smooth transition
+        } else {
+          // Fallback: if image doesn't load within 5 seconds, stop loading
+          setTimeout(() => {
+            setState(prev => ({ ...prev, imageLoading: false }))
+          }, 5000)
+        }
       }, 1500)
     }, 500) // Match animation duration
-  }, [state.cats, state.currentIndex])
+  }, [state.cats, state.currentIndex, state.preloadedImages])
 
   const handleImageLoad = useCallback(() => {
     setState(prev => ({ ...prev, imageLoading: false }))
