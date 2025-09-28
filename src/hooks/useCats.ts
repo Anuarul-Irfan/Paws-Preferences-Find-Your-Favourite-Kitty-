@@ -104,8 +104,8 @@ export const useCats = () => {
       setState(prev => ({
         ...prev,
         likedCats: [...prev.likedCats, currentCat],
-        currentIndex: newIndex,
-        imageLoading: false, // Don't show loading yet
+        // Don't update currentIndex yet - keep showing current cat during feedback
+        imageLoading: false,
         showSummary: shouldShowSummary,
         isAnimating: false,
         animationDirection: null,
@@ -119,7 +119,8 @@ export const useCats = () => {
           ...prev,
           showCompletionFeedback: false,
           completionType: null,
-          imageLoading: false // No loading state - show next cat immediately
+          currentIndex: newIndex, // Update currentIndex when ready to show next cat
+          imageLoading: false
         }))
       }, 1000)
     }, 500) // Match animation duration
@@ -144,8 +145,8 @@ export const useCats = () => {
       setState(prev => ({
         ...prev,
         dislikedCats: [...prev.dislikedCats, currentCat],
-        currentIndex: newIndex,
-        imageLoading: false, // Don't show loading yet
+        // Don't update currentIndex yet - keep showing current cat during feedback
+        imageLoading: false,
         showSummary: shouldShowSummary,
         isAnimating: false,
         animationDirection: null,
@@ -159,7 +160,8 @@ export const useCats = () => {
           ...prev,
           showCompletionFeedback: false,
           completionType: null,
-          imageLoading: false // No loading state - show next cat immediately
+          currentIndex: newIndex, // Update currentIndex when ready to show next cat
+          imageLoading: false
         }))
       }, 1000)
     }, 500) // Match animation duration
