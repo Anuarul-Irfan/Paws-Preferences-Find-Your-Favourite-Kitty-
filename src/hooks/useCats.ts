@@ -23,7 +23,9 @@ export const useCats = () => {
     selectedCat: null,
     showPopup: false,
     isAnimating: false,
-    animationDirection: null
+    animationDirection: null,
+    showCompletionFeedback: false,
+    completionType: null
   })
 
   const preloadImage = useCallback((url: string): Promise<void> => {
@@ -103,11 +105,23 @@ export const useCats = () => {
         ...prev,
         likedCats: [...prev.likedCats, currentCat],
         currentIndex: newIndex,
-        imageLoading: true,
+        imageLoading: false, // Don't show loading yet
         showSummary: shouldShowSummary,
         isAnimating: false,
-        animationDirection: null
+        animationDirection: null,
+        showCompletionFeedback: true,
+        completionType: 'like'
       }))
+
+      // Hide completion feedback and show next card after 1.5 seconds
+      setTimeout(() => {
+        setState(prev => ({
+          ...prev,
+          showCompletionFeedback: false,
+          completionType: null,
+          imageLoading: true // Start loading the next card
+        }))
+      }, 1500)
     }, 500) // Match animation duration
   }, [state.cats, state.currentIndex])
 
@@ -131,11 +145,23 @@ export const useCats = () => {
         ...prev,
         dislikedCats: [...prev.dislikedCats, currentCat],
         currentIndex: newIndex,
-        imageLoading: true,
+        imageLoading: false, // Don't show loading yet
         showSummary: shouldShowSummary,
         isAnimating: false,
-        animationDirection: null
+        animationDirection: null,
+        showCompletionFeedback: true,
+        completionType: 'dislike'
       }))
+
+      // Hide completion feedback and show next card after 1.5 seconds
+      setTimeout(() => {
+        setState(prev => ({
+          ...prev,
+          showCompletionFeedback: false,
+          completionType: null,
+          imageLoading: true // Start loading the next card
+        }))
+      }, 1500)
     }, 500) // Match animation duration
   }, [state.cats, state.currentIndex])
 
@@ -163,7 +189,9 @@ export const useCats = () => {
       selectedCat: null,
       showPopup: false,
       isAnimating: false,
-      animationDirection: null
+      animationDirection: null,
+      showCompletionFeedback: false,
+      completionType: null
     }))
     
     // Load new cats after clearing the state

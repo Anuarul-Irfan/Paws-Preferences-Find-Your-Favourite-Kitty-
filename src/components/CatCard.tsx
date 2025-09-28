@@ -19,6 +19,8 @@ interface CatCardProps {
   swipeDirection: 'left' | 'right' | null
   isAnimating?: boolean
   animationDirection?: 'left' | 'right' | null
+  showCompletionFeedback?: boolean
+  completionType?: 'like' | 'dislike' | null
 }
 
 export const CatCard: React.FC<CatCardProps> = ({
@@ -38,7 +40,9 @@ export const CatCard: React.FC<CatCardProps> = ({
   isSwipeActive,
   swipeDirection,
   isAnimating = false,
-  animationDirection = null
+  animationDirection = null,
+  showCompletionFeedback = false,
+  completionType = null
 }) => {
   const cardStyle = {
     transform: isSwipeActive 
@@ -47,7 +51,8 @@ export const CatCard: React.FC<CatCardProps> = ({
       ? `translate(${animationDirection === 'right' ? '100vw' : '-100vw'}, 0px) rotate(${animationDirection === 'right' ? '30deg' : '-30deg'})`
       : 'translate(0px, 0px) rotate(0deg)',
     transition: isSwipeActive ? 'none' : isAnimating ? 'transform 0.5s ease-in' : 'transform 0.3s ease-out',
-    opacity: isAnimating ? 0.7 : 1
+    opacity: isAnimating ? 0.7 : 1,
+    pointerEvents: imageLoading ? 'none' : 'auto'
   }
 
   return (
@@ -88,7 +93,37 @@ export const CatCard: React.FC<CatCardProps> = ({
         {isSwipeActive && swipeDirection === 'left' && (
           <div className="swipe-overlay dislike-overlay">
             <div className="swipe-text">NOPE</div>
-            <div className="swipe-icon">👎</div>
+            <div className="swipe-icon">❌</div>
+          </div>
+        )}
+
+        {/* Animation feedback overlays */}
+        {isAnimating && animationDirection === 'right' && (
+          <div className="swipe-overlay like-overlay">
+            <div className="swipe-text">LIKE</div>
+            <div className="swipe-icon">❤️</div>
+          </div>
+        )}
+        
+        {isAnimating && animationDirection === 'left' && (
+          <div className="swipe-overlay dislike-overlay">
+            <div className="swipe-text">NOPE</div>
+            <div className="swipe-icon">❌</div>
+          </div>
+        )}
+
+        {/* Completion feedback overlays */}
+        {showCompletionFeedback && completionType === 'like' && (
+          <div className="completion-overlay like-completion">
+            <div className="completion-icon">❤️</div>
+            <div className="completion-text">LIKED!</div>
+          </div>
+        )}
+        
+        {showCompletionFeedback && completionType === 'dislike' && (
+          <div className="completion-overlay dislike-completion">
+            <div className="completion-icon">❌</div>
+            <div className="completion-text">DISLIKED!</div>
           </div>
         )}
         
@@ -102,7 +137,7 @@ export const CatCard: React.FC<CatCardProps> = ({
         
         <div className="cat-actions">
           <button className="dislike-btn" onClick={onDislike}>
-            👎
+            ❌
           </button>
           <button className="like-btn" onClick={onLike}>
             ❤️

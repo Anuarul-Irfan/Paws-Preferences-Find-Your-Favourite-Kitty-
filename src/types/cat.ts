@@ -21,6 +21,8 @@ export interface AppState {
   showPopup: boolean
   isAnimating: boolean
   animationDirection: 'left' | 'right' | null
+  showCompletionFeedback: boolean
+  completionType: 'like' | 'dislike' | null
 }
 
 export interface FilterConfig {

@@ -121,6 +121,8 @@ export const fetchCats = async (
 
   const cats: Cat[] = []
   const tagsToUse = validTags.slice(0, 20)
+  let consecutiveFailures = 0
+  const maxConsecutiveFailures = 10
   
   // Fetch cats with specific tags (aim for 5)
   for (let i = 0; i < Math.min(tagsToUse.length, 5); i++) {
@@ -130,6 +132,13 @@ export const fetchCats = async (
     if (cat && !usedCatIds.has(cat.id)) {
       cats.push(cat)
       markCatAsUsed(cat.id)
+      consecutiveFailures = 0 // Reset on success
+    } else {
+      consecutiveFailures++
+      if (consecutiveFailures >= maxConsecutiveFailures) {
+        console.warn('Too many consecutive failures, stopping early')
+        break
+      }
     }
   }
   
@@ -162,12 +171,20 @@ export const fetchCats = async (
     if (cat && !usedCatIds.has(cat.id)) {
       cats.push(cat)
       markCatAsUsed(cat.id)
+      consecutiveFailures = 0 // Reset on success
+    } else {
+      consecutiveFailures++
+      if (consecutiveFailures >= maxConsecutiveFailures) {
+        console.warn('Too many consecutive failures in random fetch, stopping early')
+        break
+      }
     }
   }
   
   if (cats.length === 0) {
-    throw new Error('Failed to fetch any cats')
+    throw new Error('Failed to fetch any cats. The cat API might be temporarily unavailable.')
   }
   
+  console.log(`Successfully fetched ${cats.length} cats`)
   return cats
 }

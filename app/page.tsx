@@ -114,6 +114,8 @@ export default function Home() {
           swipeDirection={swipeHandlers.swipeDirection}
           isAnimating={state.isAnimating}
           animationDirection={state.animationDirection}
+          showCompletionFeedback={state.showCompletionFeedback}
+          completionType={state.completionType}
         />
       </main>
 
