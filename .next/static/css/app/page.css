@@ -1,3 +1,6 @@
+/*!*********************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[10].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[10].use[3]!./src/App.css ***!
+  \*********************************************************************************************************************************************************************************************************************************************************/
 /* Global App Styles */
 .app {
   min-height: 100vh;
@@ -100,7 +103,8 @@
   padding: 12px 24px;
   border-radius: 30px;
   font-weight: 600;
-  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+          backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   font-size: 1.1rem;
@@ -130,6 +134,7 @@
     0 8px 25px rgba(0,0,0,0.1),
     inset 0 1px 0 rgba(255,255,255,0.8);
   overflow: hidden;
+  cursor: -webkit-grab;
   cursor: grab;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   user-select: none;
@@ -137,7 +142,8 @@
   -moz-user-select: none;
   -ms-user-select: none;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
   display: flex;
   flex-direction: column;
 }
@@ -151,6 +157,7 @@
 }
 
 .cat-card:active {
+  cursor: -webkit-grabbing;
   cursor: grabbing;
   transform: scale(0.96);
   transition: transform 0.1s ease;
@@ -164,7 +171,7 @@
   object-position: center;
   border-radius: 24px 24px 0 0;
   transition: transform 0.3s ease;
-  flex: 1;
+  flex: 1 1;
 }
 
 .cat-card:hover .cat-image {
@@ -224,7 +231,8 @@
   border-radius: 12px;
   font-size: 0.8rem;
   font-weight: 500;
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -267,7 +275,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 25px 40px;
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
   flex-shrink: 0;
 }
 
@@ -429,7 +438,8 @@
   background: rgba(255, 255, 255, 0.25);
   padding: 25px 20px;
   border-radius: 20px;
-  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+          backdrop-filter: blur(20px);
   border: 2px solid rgba(255, 255, 255, 0.4);
   min-width: 140px;
   position: relative;
@@ -571,7 +581,8 @@
   background: rgba(255, 255, 255, 0.12);
   padding: 30px;
   border-radius: 20px;
-  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+          backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.25);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   max-width: 400px;
@@ -626,6 +637,7 @@
 .cat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-gap: 25px;
   gap: 25px;
   margin-bottom: 40px;
   padding: 0 10px;
@@ -640,7 +652,8 @@
   box-shadow: 
     0 8px 25px rgba(0,0,0,0.15),
     0 4px 15px rgba(0,0,0,0.1);
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   display: flex;
   flex-direction: column;
@@ -674,7 +687,8 @@
 .liked-cat-info {
   padding: 15px;
   background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
 }
 
 .liked-cat-tags {
@@ -691,7 +705,8 @@
   border-radius: 15px;
   font-size: 0.75rem;
   font-weight: 500;
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   white-space: nowrap;
   overflow: hidden;
@@ -730,7 +745,8 @@
     0 4px 15px rgba(255, 107, 107, 0.4),
     0 2px 8px rgba(255, 107, 107, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
   animation: bounce 2s infinite;
 }
 
@@ -897,7 +913,8 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
   animation: fadeIn 0.3s ease;
 }
 
@@ -1110,5 +1127,7 @@
 }
 
 .cat-card:active {
+  cursor: -webkit-grabbing;
   cursor: grabbing;
 }
+
