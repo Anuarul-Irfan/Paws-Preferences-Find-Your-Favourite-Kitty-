@@ -9,7 +9,7 @@ A beautiful, interactive web application that helps you discover your favorite c
 🚀 **[Try it live on GitHub Pages](https://anuarul-irfan.github.io/Paws-Preferences-Find-Your-Favourite-Kitty-/)**
 
 
-> **Note**: Replace `YOUR_USERNAME` and `YOUR_REPO_NAME` with your actual GitHub username and repository name
+
 
 ## ✨ Features
 
