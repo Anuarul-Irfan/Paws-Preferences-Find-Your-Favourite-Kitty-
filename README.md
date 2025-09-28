@@ -6,7 +6,9 @@ A beautiful, interactive web application that helps you discover your favorite c
 
 ## 🌟 Live Demo
 
-🚀 **[Try it live on GitHub Pages](https://your-username.github.io/paws-preferences)**
+🚀 **[Try it live on GitHub Pages](https://YOUR_USERNAME.github.io/YOUR_REPO_NAME)**
+
+> **Note**: Replace `YOUR_USERNAME` and `YOUR_REPO_NAME` with your actual GitHub username and repository name
 
 ## ✨ Features
 
