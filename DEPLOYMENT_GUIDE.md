@@ -44,7 +44,7 @@ Your app now has the perfect flow:
 
 2. **Configure Pages**:
    - Source: "GitHub Actions"
-   - This will use the workflow file we created
+   - This will use the GitHub auto-generated `nextjs.yml` workflow
 
 ### Step 3: Deploy Automatically
 
@@ -52,12 +52,12 @@ Your app now has the perfect flow:
    ```bash
    git add .
    git commit -m "Add GitHub Pages deployment"
-   git push origin main
+   git push origin V1
    ```
 
 2. **Check Deployment**:
    - Go to "Actions" tab in your repository
-   - You should see "Deploy to GitHub Pages" workflow running
+   - You should see "Deploy Next.js site to Pages" workflow running
    - Wait for it to complete (green checkmark)
 
 3. **Access Your App**:
